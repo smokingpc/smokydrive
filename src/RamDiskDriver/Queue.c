@@ -21,7 +21,7 @@ RamDiskDriverQueueInitialize(
     WDF_OBJECT_ATTRIBUTES  queue_attr;
     PAGED_CODE();
     
-    KdPrint((" RamDiskDriverQueueInitialize CALLed!\r\n"));
+    KdPrint(("==[SmokyDrive] RamDiskDriverQueueInitialize CALLed!\r\n"));
 
     //
     // Configure a default queue so that requests that are not
@@ -48,7 +48,7 @@ RamDiskDriverQueueInitialize(
 
     if( !NT_SUCCESS(status) ) 
     {
-        KdPrint(("WdfIoQueueCreate() failed 0x%08X", status));
+        KdPrint(("==[SmokyDrive] WdfIoQueueCreate() failed 0x%08X", status));
         return status;
     }
     
@@ -105,7 +105,7 @@ Return Value:
     IOCTL_CODE code = { 0 };
     code.Value = IoControlCode;
     
-    KdPrint(("IOCTL code[0x%08X]: Type=0x%08X, Function=0x%08X, Access=0x%08X, Method=0x%08X\r\n",
+    KdPrint(("==[SmokyDrive] IOCTL code[0x%08X]: Type=0x%08X, Function=0x%08X, Access=0x%08X, Method=0x%08X\r\n",
         IoControlCode, code.Fields.DeviceType, code.Fields.Function,
         code.Fields.Access, code.Fields.Method));
 
@@ -122,12 +122,12 @@ Return Value:
                 //回應 STATUS_BUFFER_OVERFLOW => MountMgr 會調整buffer size再來問一次
                     status = STATUS_BUFFER_TOO_SMALL;
                     info = sizeof(MOUNTDEV_NAME);
-                    KdPrint(("Output Buffer too small\r\n"));
+                    KdPrint(("==[SmokyDrive] Output Buffer too small\r\n"));
                     break;
                 }
             
                 status = WdfRequestRetrieveOutputBuffer(Request, sizeof(MOUNTDEV_NAME), &name, &size);
-                KdPrint(("WdfRequestRetrieveOutputBuffer() == 0x%08X%, size = %d\n", status, size));
+                KdPrint(("==[SmokyDrive] WdfRequestRetrieveOutputBuffer() == 0x%08X%, size = %d\n", status, size));
 
                 //query 會有3次，頭一次取得 NTDevice Name
                 //但第二次只會有 wcslen() == 4 的 outputbuffer
@@ -149,7 +149,7 @@ Return Value:
                     RtlCopyMemory(name->Name, NT_DEVICE_NAME, name->NameLength);
                     status = STATUS_SUCCESS;
                 
-                    KdPrint(("VirtVol IOCTL_MOUNTDEV_QUERY_DEVICE_NAME SUCCESS %ws\n", name->Name));
+                    KdPrint(("==[SmokyDrive] IOCTL_MOUNTDEV_QUERY_DEVICE_NAME SUCCESS %ws\n", name->Name));
                 }
             }
             break;
@@ -312,7 +312,7 @@ Return Value:
                     status = WdfRequestRetrieveInputBuffer(Request, sizeof(MOUNTDEV_NAME), &name, &size);
                     if (NT_SUCCESS(status)) 
                     {
-                        KdPrint(("MOUNTDEV_LINK NAME = %S", name->Name));
+                        KdPrint(("==[SmokyDrive] MOUNTDEV_LINK NAME = %S", name->Name));
                     }
                 }
                 status = STATUS_SUCCESS;
@@ -344,7 +344,7 @@ Return Value:
                 if (OutputBufferLength < sizeof(VOLUME_DISK_EXTENTS)) {
                     status = STATUS_BUFFER_TOO_SMALL;
                     info = sizeof(VOLUME_DISK_EXTENTS);
-                    KdPrint(("VirtVol IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS returning STATUS_BUFFER_TOO_SMALL\n"));
+                    KdPrint(("==[SmokyDrive] IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS returning STATUS_BUFFER_TOO_SMALL\n"));
                     break;
                 }
                 status = WdfRequestRetrieveOutputBuffer(Request, sizeof(VOLUME_DISK_EXTENTS), &disk_exts, &size);
@@ -419,14 +419,14 @@ Return Value:
                     {
                         *info = devext->HotPlugInfo;
                         status = STATUS_SUCCESS;
-                        info = sizeof(STORAGE_HOTPLUG_INFO);
+                        info->Size = sizeof(STORAGE_HOTPLUG_INFO);
                     }
                 }
             }
             break;
     }
 
-    KdPrint(("WdfRequestCompleteWithInformation() status == 0x%08X%, info = %d\n", status, info));
+    KdPrint(("==[SmokyDrive] WdfRequestCompleteWithInformation() status == 0x%08X%, info = %d\n", status, info));
     WdfRequestCompleteWithInformation(Request, status, info);
 }
 
@@ -505,7 +505,7 @@ Return Value:
     // to crash with bugcheck code 9F.
     //
 
-    KdPrint((" RamDiskDriverEvtIoStop CaLLed!\r\n"));
+    KdPrint(("==[SmokyDrive] RamDiskDriverEvtIoStop CaLLed!\r\n"));
 
     return;
 }
@@ -523,7 +523,7 @@ IN size_t Length
     LARGE_INTEGER          offset;
     WDFMEMORY              hmem;
 
-    KdPrint(("RamDiskDriverEvtIoRead Called!\r\n"));
+    KdPrint(("==[SmokyDrive] RamDiskDriverEvtIoRead Called!\r\n"));
 
     UNREFERENCED_PARAMETER(Queue);
     _Analysis_assume_(Length > 0);
@@ -563,7 +563,7 @@ IN size_t Length)
     UNREFERENCED_PARAMETER(devext);
     UNREFERENCED_PARAMETER(hmem);
 
-    KdPrint(("RamDiskDriverEvtIoWrite Called!\r\n"));
+    KdPrint(("==[SmokyDrive] RamDiskDriverEvtIoWrite Called!\r\n"));
 
     WDF_REQUEST_PARAMETERS_INIT(&params);
     WdfRequestGetParameters(Request, &params);

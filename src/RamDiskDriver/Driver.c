@@ -32,7 +32,7 @@ DriverEntry(
     _In_ PUNICODE_STRING RegistryPath
     )
 {
-    KdPrint((" DriverEntry CALLed!\r\n"));
+    KdPrint(("==[SmokyDrive] DriverEntry CALLed!\r\n"));
 
     WDF_DRIVER_CONFIG config;
     NTSTATUS status;
@@ -45,7 +45,7 @@ DriverEntry(
                              WDF_NO_HANDLE);
 
     if (!NT_SUCCESS(status)) 
-        KdPrint((" WdfDriverCreate() Failed! 0x%08X" , status));
+        KdPrint(("==[SmokyDrive] WdfDriverCreate() Failed! 0x%08X" , status));
     //    return status;
     //}
     return status;
@@ -60,7 +60,7 @@ RamDiskDriverEvtDeviceAdd(
     NTSTATUS status;
     UNREFERENCED_PARAMETER(Driver);
     PAGED_CODE();
-    KdPrint((" RamDiskDriverEvtDeviceAdd CALLed!\r\n"));
+    KdPrint(("==[SmokyDrive] RamDiskDriverEvtDeviceAdd CALLed!\r\n"));
 
     status = RamDiskDriverCreateDevice(DeviceInit);
     return status;
@@ -81,7 +81,7 @@ RamDiskDriverEvtDriverContextCleanup(
     PAGED_CODE ();
     PDEVICE_EXTENSION pDevExt = DeviceGetExtension(Device);
 
-    KdPrint((" RamDiskDriverEvtDriverContextCleanup CALLed!\r\n"));
+    KdPrint(("==[SmokyDrive] RamDiskDriverEvtDriverContextCleanup CALLed!\r\n"));
 
     if (pDevExt->DiskMemory)
     {

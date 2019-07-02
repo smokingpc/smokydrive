@@ -6,11 +6,12 @@
 #pragma alloc_text (PAGE, InitDeviceExtension)
 #pragma alloc_text (PAGE, AssignRamdiskDeviceName)
 #pragma alloc_text (PAGE, IsValidIoParams)
+#pragma alloc_text (PAGE, RegisterRamdiskDeviceName)
 #endif
 
 NTSTATUS RegisterRamdiskDeviceName(WDFDEVICE device, PWDFDEVICE_INIT devinit)
 {
-    KdPrint((" RegisterRamdiskDeviceName CALLed!\r\n"));
+    KdPrint(("==[SmokyDrive] RegisterRamdiskDeviceName CALLed!\r\n"));
     NTSTATUS status = 0;
 
     //assign device name. 
@@ -22,14 +23,11 @@ NTSTATUS RegisterRamdiskDeviceName(WDFDEVICE device, PWDFDEVICE_INIT devinit)
     if(NT_SUCCESS(status))
         status = WdfDeviceCreateSymbolicLink(device, &dos_name);
     else
-        KdPrint(("WdfDeviceInitAssignName() failed 0x%08X", status));
+        KdPrint(("==[SmokyDrive] WdfDeviceInitAssignName() failed 0x%08X", status));
 
-        //TraceEvents(TRACE_LEVEL_ERROR, TRACE_DRIVER, "WdfDeviceInitAssignName() failed [%!STATUS!]", status);
-    
     if (!NT_SUCCESS(status))
-        KdPrint(("WdfDeviceCreateSymbolicLink() failed 0x%08X", status));
+        KdPrint(("==[SmokyDrive] WdfDeviceCreateSymbolicLink() failed 0x%08X", status));
 
-        //TraceEvents(TRACE_LEVEL_ERROR, TRACE_DRIVER, "WdfDeviceCreateSymbolicLink() failed [%!STATUS!]", status);
     return status;
 }
 
@@ -38,7 +36,7 @@ NTSTATUS InitDeviceExtension(PDEVICE_EXTENSION devext)
     NTSTATUS status = 0;
     SMOKYDISK_SETTING setting = {0};
 
-    KdPrint((" InitDeviceExtension CALLed!\r\n"));
+    KdPrint(("==[SmokyDrive] InitDeviceExtension CALLed!\r\n"));
 
     LoadSetting(&setting);
     SIZE_T size = (SIZE_T)setting.DiskSize.QuadPart;
@@ -50,7 +48,7 @@ NTSTATUS InitDeviceExtension(PDEVICE_EXTENSION devext)
     devext->DiskMemory = ExAllocatePoolWithTag(NonPagedPool, size, MY_POOLTAG);
     if (NULL == devext->DiskMemory)
     {
-        KdPrint(("ExAllocatePoolWithTag() failed 0x%08X", status));
+        KdPrint(("==[SmokyDrive] ExAllocatePoolWithTag() failed 0x%08X", status));
         //TraceEvents(TRACE_LEVEL_ERROR, TRACE_DRIVER, "ExAllocatePoolWithTag() failed");
         return STATUS_MEMORY_NOT_ALLOCATED;
     }
@@ -109,11 +107,13 @@ NTSTATUS RegisterInterface(IN WDFDEVICE dev)
         // Enable the device interface registered for the virtvol device
         WdfDeviceSetDeviceInterfaceState(dev, guid, NULL, TRUE);
     }
+
+    return status;
 }
 
 void LoadSetting(PSMOKYDISK_SETTING setting)
 {
-    KdPrint((" LoadSetting CALLed!\r\n"));
+    KdPrint(("==[SmokyDrive] LoadSetting CALLed!\r\n"));
 
 //todo: read registry to load settings
     setting->DiskSize.QuadPart = DEFAULT_DISK_SIZE;
@@ -138,7 +138,7 @@ BOOLEAN IsValidIoParams(
 //  1.end of IO range should not exceed total size range.
 //  2.begin of IO range should be fit in disk.
 //  3.IO offset should be positive number.
-    KdPrint((" IsValidIoParams CALLed!\r\n"));
+    KdPrint(("==[SmokyDrive] IsValidIoParams CALLed!\r\n"));
 
     LARGE_INTEGER begin = ByteOffset;
     LARGE_INTEGER end = ByteOffset;
@@ -150,6 +150,8 @@ BOOLEAN IsValidIoParams(
         return FALSE;
     if (end.QuadPart <= 0 || end.QuadPart > (DevExt->DiskSize.QuadPart - 1))
         return FALSE;
+    
+    KdPrint(("==[SmokyDrive] IsValidIoParams: %lld %lld\r\n", ByteOffset, Length));
 
     return TRUE;
 }

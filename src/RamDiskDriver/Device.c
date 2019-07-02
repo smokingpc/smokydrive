@@ -30,18 +30,19 @@ RamDiskDriverCreateDevice(
     WDF_OBJECT_ATTRIBUTES   deviceAttributes;
     PDEVICE_EXTENSION devext;
     WDFDEVICE device;
+    PWDFDEVICE_INIT devinit = DeviceInit;
     NTSTATUS status;
-    KdPrint((" RamDiskDriverCreateDevice CALLed!\r\n"));
+    KdPrint(("==[SmokyDrive] RamDiskDriverCreateDevice CALLed!\r\n"));
 
     PAGED_CODE();
 
-    DECLARE_CONST_UNICODE_STRING(nt_name, NT_DEVICE_NAME);
-    status = WdfDeviceInitAssignName(DeviceInit, &nt_name);
-    if (!NT_SUCCESS(status))
-    {
-        KdPrint(("WdfDeviceInitAssignName() failed 0x%08X", status));
-        return status;
-    }
+    //DECLARE_CONST_UNICODE_STRING(nt_name, NT_DEVICE_NAME);
+    //status = WdfDeviceInitAssignName(DeviceInit, &nt_name);
+    //if (!NT_SUCCESS(status))
+    //{
+    //    KdPrint(("==[SmokyDrive] WdfDeviceInitAssignName() failed 0x%08X", status));
+    //    return status;
+    //}
 
     WDF_PNPPOWER_EVENT_CALLBACKS    power_callbacks;
     WDF_PNPPOWER_EVENT_CALLBACKS_INIT(&power_callbacks);
@@ -56,29 +57,30 @@ RamDiskDriverCreateDevice(
 
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_EXTENSION);
     deviceAttributes.EvtCleanupCallback = RamDiskDriverEvtDriverContextCleanup;
-
+    
+    //不知為何DeviceInit會被清成NULL，但DeviceCreate是成功的...
     status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
-    if (!NT_SUCCESS(status))
-        KdPrint(("WdfDeviceCreate() failed 0x%08X", status));
-        //return status;
+    if (NT_SUCCESS(status))
+    {
+        if(NULL == DeviceInit)
+            DeviceInit = devinit;
+        status = RegisterRamdiskDeviceName(device, DeviceInit);
 
-    devext = DeviceGetExtension(device);
+        devext = DeviceGetExtension(device);
+        status = RamDiskDriverQueueInitialize(device);
+        if (!NT_SUCCESS(status))
+            KdPrint(("==[SmokyDrive] RamDiskDriverQueueInitialize() failed 0x%08X", status));
 
-    status = RamDiskDriverQueueInitialize(device);
-    if (!NT_SUCCESS(status)) 
-        KdPrint(("RamDiskDriverQueueInitialize() failed 0x%08X", status));
+        status = InitDeviceExtension(devext);
+        if (!NT_SUCCESS(status))
+            KdPrint(("==[SmokyDrive] InitDeviceExtension() failed 0x%08X", status));
 
-    status = InitDeviceExtension(devext);
-    if (!NT_SUCCESS(status))
-        KdPrint(("InitDeviceExtension() failed 0x%08X", status));
-
-    status = RegisterInterface(device);
-    if (!NT_SUCCESS(status))
-        KdPrint(("RegisterInterface() failed 0x%08X", status));
-
-    //status = WdfDeviceCreateSymbolicLink(device, &devext->SymbolicLink);
-    //if (!NT_SUCCESS(status))
-    //    KdPrint(("WdfDeviceCreateSymbolicLink() failed 0x%08X", status));
+        status = RegisterInterface(device);
+        if (!NT_SUCCESS(status))
+            KdPrint(("==[SmokyDrive] RegisterInterface() failed 0x%08X", status));
+    }
+    else
+        KdPrint(("==[SmokyDrive] WdfDeviceCreate() failed 0x%08X", status));
 
     return status;
 }
@@ -87,7 +89,7 @@ NTSTATUS RamDiskEvtDeviceD0Entry(IN WDFDEVICE Device, IN WDF_POWER_DEVICE_STATE 
 {
     UNREFERENCED_PARAMETER(Device);
     UNREFERENCED_PARAMETER(PreviousState);
-    KdPrint((" RamDiskEvtDeviceD0Entry CALLed!\r\n"));
+    KdPrint(("==[SmokyDrive] RamDiskEvtDeviceD0Entry CALLed!\r\n"));
 
     return STATUS_SUCCESS;
 }
@@ -97,13 +99,13 @@ NTSTATUS RamDiskEvtDevicePrepareHardware(IN WDFDEVICE Device, IN WDFCMRESLIST Re
     UNREFERENCED_PARAMETER(Device);
     UNREFERENCED_PARAMETER(ResourcesRaw);
     UNREFERENCED_PARAMETER(ResourcesTranslated);
-    KdPrint((" RamDiskEvtDevicePrepareHardware CALLed!\r\n"));
+    KdPrint(("==[SmokyDrive] RamDiskEvtDevicePrepareHardware CALLed!\r\n"));
     return STATUS_SUCCESS;
 }
 NTSTATUS RamDiskEvtDeviceReleaseHardware(IN WDFDEVICE Device, IN WDFCMRESLIST ResourceListTranslated)
 {
     UNREFERENCED_PARAMETER(Device);
     UNREFERENCED_PARAMETER(ResourceListTranslated);
-    KdPrint((" RamDiskEvtDeviceReleaseHardware CALLed!\r\n"));
+    KdPrint(("==[SmokyDrive] RamDiskEvtDeviceReleaseHardware CALLed!\r\n"));
     return STATUS_SUCCESS;
 }
