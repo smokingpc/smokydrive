@@ -39,3 +39,4 @@ EVT_WDF_DEVICE_D0_ENTRY RamDiskEvtDeviceD0Entry;
 EVT_WDF_DEVICE_PREPARE_HARDWARE RamDiskEvtDevicePrepareHardware;
 EVT_WDF_DEVICE_RELEASE_HARDWARE RamDiskEvtDeviceReleaseHardware;
 EVT_WDF_DRIVER_UNLOAD RamDiskDriverEvtDriverUnload;
+

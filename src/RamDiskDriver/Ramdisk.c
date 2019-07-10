@@ -13,20 +13,20 @@ NTSTATUS RegisterRamdiskDeviceName(WDFDEVICE device, PWDFDEVICE_INIT devinit)
 {
     KdPrint(("==[SmokyDrive] RegisterRamdiskDeviceName CALLed!\r\n"));
     NTSTATUS status = 0;
-
+    UNREFERENCED_PARAMETER(device);
     //assign device name. 
     //If name is not unique, we can't install ramdisk more than 1 instance.
+    //DECLARE_CONST_UNICODE_STRING(dos_name, DOS_DEVICE_NAME);
+    
     DECLARE_CONST_UNICODE_STRING(nt_name, NT_DEVICE_NAME);
-    DECLARE_CONST_UNICODE_STRING(dos_name, DOS_DEVICE_NAME);
-
     status = WdfDeviceInitAssignName(devinit, &nt_name);
-    if(NT_SUCCESS(status))
-        status = WdfDeviceCreateSymbolicLink(device, &dos_name);
-    else
-        KdPrint(("==[SmokyDrive] WdfDeviceInitAssignName() failed 0x%08X", status));
+    //if(NT_SUCCESS(status))
+    //    status = WdfDeviceCreateSymbolicLink(device, &dos_name);
+    //else
+    //    KdPrint(("==[SmokyDrive] WdfDeviceInitAssignName() failed 0x%08X", status));
 
     if (!NT_SUCCESS(status))
-        KdPrint(("==[SmokyDrive] WdfDeviceCreateSymbolicLink() failed 0x%08X", status));
+        KdPrint(("==[SmokyDrive] WdfDeviceInitAssignName() failed 0x%08X", status));
 
     return status;
 }
@@ -44,6 +44,10 @@ NTSTATUS InitDeviceExtension(PDEVICE_EXTENSION devext)
     //Storage Device Number
     //why begin from 99?
     devext->StorageNumber = 99 + 1;
+
+    devext->NTDeviceName.Buffer = NT_DEVICE_NAME;
+    devext->NTDeviceName.Length =(USHORT) wcslen(NT_DEVICE_NAME)*sizeof(wchar_t);
+    devext->NTDeviceName.MaximumLength = devext->NTDeviceName.Length + sizeof(wchar_t);
 
     devext->DiskMemory = ExAllocatePoolWithTag(NonPagedPool, size, MY_POOLTAG);
     if (NULL == devext->DiskMemory)

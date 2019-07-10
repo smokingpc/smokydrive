@@ -17,6 +17,7 @@ Environment:
 #include "public.h"
 #include <ntdddisk.h>
 #include <wdf.h>
+#include <Mountmgr.h>
 #include "CommonDefines.h"
 
 //typedef struct _DISK_INFO {
@@ -45,6 +46,7 @@ typedef struct _DEVICE_EXTENSION
     UNICODE_STRING      SymbolicLink;               // Dos symbolic name; Drive letter
     WCHAR               SymLinkBuffer[SYMLINK_BUFFER_SIZE];
     UNICODE_STRING      DeviceInterfaceSymbolicLink;
+    UNICODE_STRING      NTDeviceName;
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
 
 //

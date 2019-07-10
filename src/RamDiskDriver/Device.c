@@ -21,6 +21,8 @@ Environment:
 #pragma alloc_text (PAGE, RamDiskDriverCreateDevice)
 #endif
 
+NTSTATUS RegisterMountMgr(PDEVICE_EXTENSION devext);
+VOID WorkItemRegisterMountMgr(WDFWORKITEM WorkItem);
 
 NTSTATUS
 RamDiskDriverCreateDevice(
@@ -36,14 +38,6 @@ RamDiskDriverCreateDevice(
 
     PAGED_CODE();
 
-    //DECLARE_CONST_UNICODE_STRING(nt_name, NT_DEVICE_NAME);
-    //status = WdfDeviceInitAssignName(DeviceInit, &nt_name);
-    //if (!NT_SUCCESS(status))
-    //{
-    //    KdPrint(("==[SmokyDrive] WdfDeviceInitAssignName() failed 0x%08X", status));
-    //    return status;
-    //}
-
     WDF_PNPPOWER_EVENT_CALLBACKS    power_callbacks;
     WDF_PNPPOWER_EVENT_CALLBACKS_INIT(&power_callbacks);
     power_callbacks.EvtDevicePrepareHardware = RamDiskEvtDevicePrepareHardware;
@@ -57,16 +51,21 @@ RamDiskDriverCreateDevice(
 
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_EXTENSION);
     deviceAttributes.EvtCleanupCallback = RamDiskDriverEvtDriverContextCleanup;
-    
+    //status = WdfDeviceInitAssignSDDLString(DeviceInit, &SDDL_DEVOBJ_SYS_ALL_ADM_RWX_WORLD_RWX_RES_RWX);
+    //if (!NT_SUCCESS(status))
+    //{
+    //    KdPrint(("==[SmokyDrive] WdfDeviceInitAssignSDDLString() failed 0x%08X", status));
+    //    return status;
+    //}
+
     //不知為何DeviceInit會被清成NULL，但DeviceCreate是成功的...
     status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
     if (NT_SUCCESS(status))
     {
         if(NULL == DeviceInit)
             DeviceInit = devinit;
-        status = RegisterRamdiskDeviceName(device, DeviceInit);
-
         devext = DeviceGetExtension(device);
+
         status = RamDiskDriverQueueInitialize(device);
         if (!NT_SUCCESS(status))
             KdPrint(("==[SmokyDrive] RamDiskDriverQueueInitialize() failed 0x%08X", status));
@@ -75,9 +74,7 @@ RamDiskDriverCreateDevice(
         if (!NT_SUCCESS(status))
             KdPrint(("==[SmokyDrive] InitDeviceExtension() failed 0x%08X", status));
 
-        status = RegisterInterface(device);
-        if (!NT_SUCCESS(status))
-            KdPrint(("==[SmokyDrive] RegisterInterface() failed 0x%08X", status));
+        status = RegisterRamdiskDeviceName(device, DeviceInit);
     }
     else
         KdPrint(("==[SmokyDrive] WdfDeviceCreate() failed 0x%08X", status));
@@ -91,7 +88,83 @@ NTSTATUS RamDiskEvtDeviceD0Entry(IN WDFDEVICE Device, IN WDF_POWER_DEVICE_STATE 
     UNREFERENCED_PARAMETER(PreviousState);
     KdPrint(("==[SmokyDrive] RamDiskEvtDeviceD0Entry CALLed!\r\n"));
 
-    return STATUS_SUCCESS;
+    //devExt = DeviceGetExtension(Device);
+    //status = CreateMountMgrWorkItem(Device);
+    NTSTATUS status;
+    WDF_WORKITEM_CONFIG config;
+    WDF_OBJECT_ATTRIBUTES attributes;
+    WDFWORKITEM workitem = NULL;
+
+    WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+    attributes.ParentObject = Device;
+    
+    WDF_WORKITEM_CONFIG_INIT(&config, WorkItemRegisterMountMgr);
+    
+    status = WdfWorkItemCreate(&config, &attributes, &workitem);
+    if (!NT_SUCCESS(status)) 
+    {
+        return status;
+    }
+    WdfWorkItemEnqueue(workitem);
+    return status;
+
+    //return STATUS_SUCCESS;
+}
+
+NTSTATUS RegisterMountMgr(PDEVICE_EXTENSION devext)
+{
+    NTSTATUS status = STATUS_SUCCESS;
+    UNICODE_STRING name;
+    PFILE_OBJECT mountMgrFileObject = NULL;
+    PDEVICE_OBJECT mountMgrDeviceObject = NULL;
+    PMOUNTMGR_TARGET_NAME mntName = NULL;
+    KEVENT event;
+    ULONG mntNameLength = 0;
+
+    RtlInitUnicodeString(&name, MOUNTMGR_DEVICE_NAME);
+    status = IoGetDeviceObjectPointer(&name, FILE_READ_ATTRIBUTES, &mountMgrFileObject, &mountMgrDeviceObject);
+    if (NT_SUCCESS(status)) {
+        PIRP irp;
+        IO_STATUS_BLOCK statusBlock;
+        mntNameLength = sizeof(MOUNTMGR_TARGET_NAME) + devext->NTDeviceName.MaximumLength;
+        mntName = ExAllocatePoolWithTag(NonPagedPool, mntNameLength, MY_POOLTAG);
+        if (NULL == mntName) {
+            KdPrint(("==[SmokyDrive] mntName == NULL!\r\n"));
+            return STATUS_INSUFFICIENT_RESOURCES;
+        }
+        mntName->DeviceNameLength = devext->NTDeviceName.Length;
+        RtlZeroMemory(mntName->DeviceName, devext->NTDeviceName.MaximumLength);
+        RtlCopyMemory(mntName->DeviceName, devext->NTDeviceName.Buffer, devext->NTDeviceName.Length);
+        
+        KeInitializeEvent(&event, NotificationEvent, FALSE);
+        irp = IoBuildDeviceIoControlRequest(IOCTL_MOUNTMGR_VOLUME_ARRIVAL_NOTIFICATION, mountMgrDeviceObject, mntName, mntNameLength, NULL, 0, FALSE, &event, &statusBlock);
+        if (irp) {
+            status = IoCallDriver(mountMgrDeviceObject, irp);
+            if (status == STATUS_PENDING) {
+                status = KeWaitForSingleObject(&event, Executive, KernelMode, FALSE, NULL);
+            }
+            else
+                KdPrint(("==[SmokyDrive] call to MountManager failed. status= 0x%08X\r\n", status));
+        }
+    }
+    if (mntName) {
+        ExFreePool(mntName);
+    }
+    return status;
+}
+
+VOID WorkItemRegisterMountMgr(WDFWORKITEM WorkItem)
+{
+    WDFDEVICE device;
+    PDEVICE_EXTENSION devExt;
+    device = WdfWorkItemGetParentObject(WorkItem);
+    devExt = DeviceGetExtension(device);
+    RegisterMountMgr(devExt);
+    RegisterInterface(device);
+
+    //status = RegisterInterface(device);
+    //if (!NT_SUCCESS(status))
+    //    KdPrint(("==[SmokyDrive] RegisterInterface() failed 0x%08X", status));
 }
 
 NTSTATUS RamDiskEvtDevicePrepareHardware(IN WDFDEVICE Device, IN WDFCMRESLIST ResourcesRaw, IN WDFCMRESLIST ResourcesTranslated)
