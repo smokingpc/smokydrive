@@ -9,11 +9,10 @@
 #pragma alloc_text (PAGE, RegisterRamdiskDeviceName)
 #endif
 
-NTSTATUS RegisterRamdiskDeviceName(WDFDEVICE device, PWDFDEVICE_INIT devinit)
+NTSTATUS RegisterRamdiskDeviceName(PWDFDEVICE_INIT devinit)
 {
     KdPrint(("==[SmokyDrive] RegisterRamdiskDeviceName CALLed!\r\n"));
     NTSTATUS status = 0;
-    UNREFERENCED_PARAMETER(device);
     //assign device name. 
     //If name is not unique, we can't install ramdisk more than 1 instance.
     //DECLARE_CONST_UNICODE_STRING(dos_name, DOS_DEVICE_NAME);
@@ -72,7 +71,7 @@ NTSTATUS InitDeviceExtension(PDEVICE_EXTENSION devext)
     devext->HotPlugInfo.MediaRemovable = TRUE;
     devext->HotPlugInfo.WriteCacheEnableOverride = FALSE;   //cache policy無法在DeviceManager頁面修改
 
-
+    //devext->DeviceInterfaceSymbolicLink
     return status;
 }
 

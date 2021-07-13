@@ -32,7 +32,7 @@ HKR,,Icon,,-5
 
 [SourceDisksFiles]
 RamDiskDriver.sys  = 1
-
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll = 1
 ;*****************************************
 ; Install Section
 ;*****************************************
@@ -81,8 +81,8 @@ HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfC
 [DiskInstall_CoInstaller_CopyFiles]
 WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
 
-[SourceDisksFiles]
-WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 
+;[SourceDisksFiles]
+;WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 
 
 [DiskInstall.NT.Wdf]
 KmdfService =  %ServiceName%, RamDiskDriver_wdfsect

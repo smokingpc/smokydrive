@@ -7,7 +7,8 @@ NTSTATUS InitDeviceExtension(PDEVICE_EXTENSION devext);
 void LoadSetting(PSMOKYDISK_SETTING setting);
 BOOLEAN IsValidIoParams(IN PDEVICE_EXTENSION devExt, IN LARGE_INTEGER ByteOffset, IN size_t Length);
 NTSTATUS RegisterInterface(IN WDFDEVICE dev);
-NTSTATUS RegisterRamdiskDeviceName(WDFDEVICE device, PWDFDEVICE_INIT devinit);
+//NTSTATUS RegisterRamdiskDeviceName(WDFDEVICE device, PWDFDEVICE_INIT devinit);
+NTSTATUS RegisterRamdiskDeviceName(PWDFDEVICE_INIT devinit);
 
 struct _IOCTL_FIELDS
 {

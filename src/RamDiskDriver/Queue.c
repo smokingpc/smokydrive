@@ -114,6 +114,7 @@ Return Value:
     //VOLUMN system 從VISTA後都會對VOLUMN device發這個code
         case IOCTL_MOUNTDEV_QUERY_DEVICE_NAME:
             {
+                KdPrint(("IOCTL_MOUNTDEV_QUERY_DEVICE_NAME"));
                 PMOUNTDEV_NAME name = NULL;
                 size = 0;
                 if (OutputBufferLength < sizeof(MOUNTDEV_NAME))
@@ -157,6 +158,7 @@ Return Value:
         //舊型 MBR 的 partition info
         case IOCTL_DISK_GET_PARTITION_INFO: 
             {
+                KdPrint(("IOCTL_DISK_GET_PARTITION_INFO"));
                 PPARTITION_INFORMATION part_info;
                 LPBOOT_SECTOR boot_sector = (LPBOOT_SECTOR)devext->DiskMemory;
 
@@ -188,6 +190,7 @@ Return Value:
         //e.g. Cylinders, sectors, tracks....etc.
         case IOCTL_DISK_GET_DRIVE_GEOMETRY:  
             {
+                KdPrint(("IOCTL_DISK_GET_DRIVE_GEOMETRY"));
                 PDISK_GEOMETRY geometry;
                 //
                 // Return the drive geometry for the ram disk. Note that
@@ -207,6 +210,7 @@ Return Value:
         //一個Ramdisk Driver可以配置多個不同的 FDO....
         case IOCTL_STORAGE_GET_DEVICE_NUMBER:
             {
+                KdPrint(("IOCTL_STORAGE_GET_DEVICE_NUMBER"));
                 if (OutputBufferLength < sizeof(STORAGE_DEVICE_NUMBER)) 
                 {
                     status = STATUS_BUFFER_TOO_SMALL;
@@ -230,6 +234,7 @@ Return Value:
         //Query total size of disk
         case IOCTL_DISK_GET_LENGTH_INFO:
             {
+                KdPrint(("IOCTL_DISK_GET_LENGTH_INFO"));
                 if (OutputBufferLength < sizeof(GET_LENGTH_INFORMATION)) {
                     status = STATUS_BUFFER_TOO_SMALL;
                     info = sizeof(GET_LENGTH_INFORMATION);
@@ -249,6 +254,7 @@ Return Value:
         //新型 MBR/GPT 兩者兼用的 partition info
         case IOCTL_DISK_GET_PARTITION_INFO_EX:
             {
+                KdPrint(("IOCTL_DISK_GET_PARTITION_INFO_EX"));
                 if (OutputBufferLength < sizeof(PARTITION_INFORMATION_EX)) 
                 {
                     status = STATUS_BUFFER_TOO_SMALL;
@@ -277,15 +283,20 @@ Return Value:
             }
             break;
         case IOCTL_DISK_CHECK_VERIFY:
+            KdPrint(("IOCTL_DISK_CHECK_VERIFY"));
         case IOCTL_DISK_IS_WRITABLE:
+            KdPrint(("IOCTL_DISK_IS_WRITABLE"));
         case IOCTL_VOLUME_IS_DYNAMIC:
+            KdPrint(("IOCTL_VOLUME_IS_DYNAMIC"));
         case IOCTL_VOLUME_ONLINE:
+            KdPrint(("IOCTL_VOLUME_ONLINE"));
             status = STATUS_SUCCESS;
             break;
 
         //取得Disk Volume GUID => MountMgr 都用 GUID 操作 volume 的
         case IOCTL_MOUNTDEV_QUERY_STABLE_GUID:
             {
+                KdPrint(("IOCTL_MOUNTDEV_QUERY_STABLE_GUID"));
                 if (OutputBufferLength < sizeof(MOUNTDEV_STABLE_GUID)) 
                 {
                     status = STATUS_BUFFER_TOO_SMALL;
@@ -307,6 +318,7 @@ Return Value:
         //The input for this IOCTL is the persistent name assigned.
         case IOCTL_MOUNTDEV_LINK_CREATED:
             {
+                KdPrint(("IOCTL_MOUNTDEV_LINK_CREATED"));
                 PMOUNTDEV_NAME name;
                 if (InputBufferLength >= sizeof(MOUNTDEV_NAME)) {
                     status = WdfRequestRetrieveInputBuffer(Request, sizeof(MOUNTDEV_NAME), &name, &size);
@@ -321,6 +333,7 @@ Return Value:
         //取得Volume的 GPT 屬性
         case IOCTL_VOLUME_GET_GPT_ATTRIBUTES:
             {
+                KdPrint(("IOCTL_VOLUME_GET_GPT_ATTRIBUTES"));
                 if (OutputBufferLength < sizeof(VOLUME_GET_GPT_ATTRIBUTES_INFORMATION)) {
                     status = STATUS_BUFFER_TOO_SMALL;
                     info = sizeof(VOLUME_GET_GPT_ATTRIBUTES_INFORMATION);
@@ -340,6 +353,7 @@ Return Value:
         //取得這個Volume到底包含哪幾個Disk上的SectorRange聯合而成？
         case IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS:
             {
+                KdPrint(("IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS"));
                 PVOLUME_DISK_EXTENTS disk_exts;
                 if (OutputBufferLength < sizeof(VOLUME_DISK_EXTENTS)) {
                     status = STATUS_BUFFER_TOO_SMALL;
@@ -364,6 +378,7 @@ Return Value:
         case IOCTL_MOUNTDEV_QUERY_SUGGESTED_LINK_NAME:
             status = STATUS_INVALID_DEVICE_REQUEST;
             info = 0;
+            KdPrint(("IOCTL_MOUNTDEV_QUERY_SUGGESTED_LINK_NAME"));
             break;
         // mountmgr 會來問這個Device的 GUID，後續操作以此GUID為DeviceInterface
         //Volume Interface GUID好像要用 GUID_DEVINTERFACE_VOLUME 去向系統取得？
@@ -371,6 +386,7 @@ Return Value:
             // Set the volume Unique ID to the symbolic link GUID that was returned when the driver registered
             // a GUID_DEVINTERFACE_VOLUME device interface (see the RegisterInterface function)
             {
+                KdPrint(("IOCTL_MOUNTDEV_QUERY_UNIQUE_ID"));
                 PMOUNTDEV_UNIQUE_ID uniqueId = NULL;
                 status = STATUS_SUCCESS;
                 if (!devext->DeviceInterfaceSymbolicLink.Buffer) 
@@ -405,6 +421,7 @@ Return Value:
             break;
         case IOCTL_STORAGE_GET_HOTPLUG_INFO:
             {
+                KdPrint(("IOCTL_STORAGE_GET_HOTPLUG_INFO"));
                 if (OutputBufferLength < sizeof(STORAGE_HOTPLUG_INFO)) 
                 {
                     status = STATUS_BUFFER_TOO_SMALL;
@@ -413,13 +430,13 @@ Return Value:
                 }
                 else 
                 {
-                    PSTORAGE_HOTPLUG_INFO info = NULL;
-                    status = WdfRequestRetrieveOutputBuffer(Request, sizeof(STORAGE_HOTPLUG_INFO), &info, &size);
+                    PSTORAGE_HOTPLUG_INFO info2 = NULL;
+                    status = WdfRequestRetrieveOutputBuffer(Request, sizeof(STORAGE_HOTPLUG_INFO), &info2, &size);
                     if (NT_SUCCESS(status)) 
                     {
-                        *info = devext->HotPlugInfo;
+                        *info2 = devext->HotPlugInfo;
                         status = STATUS_SUCCESS;
-                        info->Size = sizeof(STORAGE_HOTPLUG_INFO);
+                        info2->Size = sizeof(STORAGE_HOTPLUG_INFO);
                     }
                 }
             }
